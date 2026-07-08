@@ -2,6 +2,7 @@ langchain
 langchain-core
 langchain-community
 langgraph
+streamlit
 
 langchain-mistralai
 mistralai

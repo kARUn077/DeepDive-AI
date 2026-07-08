@@ -3,9 +3,9 @@ from langchain_mistralai import ChatMistralAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from tools import web_search , scrape_url 
-from dotenv import load_dotenv
+from config import load_app_secrets
 
-load_dotenv()
+load_app_secrets()
 
 #model setup 
 llm = ChatMistralAI(

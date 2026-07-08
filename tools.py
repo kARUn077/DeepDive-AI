@@ -5,8 +5,9 @@ from bs4 import BeautifulSoup #it is a library for parsing HTML and XML document
 from tavily import TavilyClient
 import os
 from rich import print
-from dotenv import load_dotenv
-load_dotenv()  # Load environment variables from .env file
+from config import load_app_secrets
+
+load_app_secrets()
 
 tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
