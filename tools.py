@@ -12,7 +12,7 @@ tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
 
 #create tool
 @tool
-def websearch(query: str) -> str:
+def web_search(query: str) -> str:
     """
     Search web for recent and reliable information on topic , return titles and urls and snippets.
     """
@@ -25,4 +25,14 @@ def websearch(query: str) -> str:
 
     return "\n------\n".join(out)
 
-print(websearch.invoke("What is the latest news on war?"))  # Example usage of the websearch tool
+@tool
+def scrape_url(url: str) -> str:
+    """Scrape and return clean text content from a given URL for deeper reading."""
+    try:
+        resp = requests.get(url, timeout=8, headers={"User-Agent": "Mozilla/5.0"})
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for tag in soup(["script", "style", "nav", "footer"]):
+            tag.decompose()
+        return soup.get_text(separator=" ", strip=True)[:3000]
+    except Exception as e:
+        return f"Could not scrape URL: {str(e)}"
