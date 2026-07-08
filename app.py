@@ -102,7 +102,7 @@ html, body, [class*="css"] {
     background: rgba(255,255,255,0.05) !important;
     border: 1px solid rgba(255,140,50,0.25) !important;
     border-radius: 10px !important;
-    color: #161616 !important;
+    color: #f8f4eb !important;
     font-family: 'DM Sans', sans-serif !important;
     font-size: 1rem !important;
     padding: 0.75rem 1rem !important;
@@ -112,10 +112,10 @@ html, body, [class*="css"] {
 .stTextInput textarea,
 div[data-baseweb="input"] input,
 div[data-baseweb="textarea"] textarea {
-    background-color: rgba(255,255,255,0.92) !important;
-    color: #161616 !important;
-    caret-color: #ff5f1a !important;
-    -webkit-text-fill-color: #161616 !important;
+    background-color: rgba(255,255,255,0.05) !important;
+    color: #f8f4eb !important;
+    caret-color: #ffb36b !important;
+    -webkit-text-fill-color: #f8f4eb !important;
 }
 .stTextInput input,
 div[data-baseweb="input"] input {
@@ -126,14 +126,14 @@ div[data-baseweb="textarea"] textarea {
     border-radius: 10px !important;
 }
 .stTextInput > div > div > input::placeholder {
-    color: #a59c91 !important;
+    color: #b7afa4 !important;
     opacity: 1 !important;
 }
 .stTextInput input::placeholder,
 .stTextInput textarea::placeholder,
 div[data-baseweb="input"] input::placeholder,
 div[data-baseweb="textarea"] textarea::placeholder {
-    color: #a59c91 !important;
+    color: #b7afa4 !important;
     opacity: 1 !important;
 }
 .stTextInput input:focus,
