@@ -1,73 +1,125 @@
-from agents import build_reader_agent , build_search_agent , writer_chain , critic_chain
+from langgraph.graph import StateGraph, END
+from typing_extensions import TypedDict
+from agents import build_reader_agent, build_search_agent, build_writer_agent, critic_chain
 
-def run_research_pipeline(topic : str) -> dict:
+class GraphState(TypedDict):
+    topic: str
+    search_results: str
+    scraped_content: str
+    report: str
+    critic_score: int
+    feedback: str
+    rewrite_count: int
 
-    state = {}
+# Instantiate the agents once
+search_agent = build_search_agent()
+reader_agent = build_reader_agent()
+writer_agent = build_writer_agent()
 
-    #search agent working 
-    print("\n"+" ="*50)
-    print("step 1 - search agent is working ...")
-    print("="*50)
-
-    search_agent = build_search_agent()
-    search_result = search_agent.invoke({
-        "messages" : [("user", f"Find recent, reliable and detailed information about: {topic}")]
+def node_search(state: GraphState):
+    print("\n--- [NODE] Search Agent ---")
+    topic = state["topic"]
+    result = search_agent.invoke({
+        "messages": [("user", f"Find recent, reliable and detailed information about: {topic}")]
     })
-    state["search_results"] = search_result['messages'][-1].content
+    return {"search_results": result['messages'][-1].content, "rewrite_count": 0}
 
-    print("\n search result ",state['search_results'])
-
-    #step 2 - reader agent 
-    print("\n"+" ="*50)
-    print("step 2 - Reader agent is scraping top resources ...")
-    print("="*50)
-
-    reader_agent = build_reader_agent()
-    reader_result = reader_agent.invoke({
+def node_scrape(state: GraphState):
+    print("\n--- [NODE] Reader Agent (RAG) ---")
+    search_results = state.get("search_results", "")
+    topic = state["topic"]
+    
+    result = reader_agent.invoke({
         "messages": [("user",
-            f"Based on the following search results about '{topic}', "
-            f"pick the most relevant URL and scrape it for deeper content.\n\n"
-            f"Search Results:\n{state['search_results'][:800]}"
+            f"Based on these search results about '{topic}', use your tool to scrape and store the most relevant URLs into the RAG database.\n\n"
+            f"Search Results:\n{search_results[:800]}"
         )]
     })
+    return {"scraped_content": result['messages'][-1].content}
 
-    state['scraped_content'] = reader_result['messages'][-1].content
-
-    print("\nscraped content: \n", state['scraped_content'])
-
-    #step 3 - writer chain 
-
-    print("\n"+" ="*50)
-    print("step 3 - Writer is drafting the report ...")
-    print("="*50)
-
-    research_combined = (
-        f"SEARCH RESULTS : \n {state['search_results']} \n\n"
-        f"DETAILED SCRAPED CONTENT : \n {state['scraped_content']}"
+def node_write(state: GraphState):
+    print("\n--- [NODE] Writer Agent ---")
+    topic = state["topic"]
+    feedback = state.get("feedback", "")
+    rewrite_count = state.get("rewrite_count", 0)
+    
+    prompt_msg = (
+        f"Write a detailed research report on: {topic}.\n"
+        f"Structure it clearly with Introduction, Key Findings, and Conclusion.\n"
+        f"IMPORTANT: You MUST use your retrieve_knowledge tool to search the database for factual information to include in the report."
     )
-
-    state["report"] = writer_chain.invoke({
-        "topic" : topic,
-        "research" : research_combined
+    
+    # If this is a rewrite loop, we give the Writer the Critic's harsh feedback!
+    if feedback and rewrite_count > 0:
+        prompt_msg += f"\n\nWARNING - PREVIOUS DRAFT REJECTED!\nThe Critic gave this feedback. You MUST improve the report based on this:\n{feedback}"
+    
+    result = writer_agent.invoke({
+         "messages": [("user", prompt_msg)]
     })
+    
+    return {"report": result['messages'][-1].content}
 
-    print("\n Final Report\n",state['report'])
-
-    #critic report 
-
-    print("\n"+" ="*50)
-    print("step 4 - critic is reviewing the report ")
-    print("="*50)
-
-    state["feedback"] = critic_chain.invoke({
-        "report":state['report']
+def node_critic(state: GraphState):
+    print("\n--- [NODE] Critic Agent ---")
+    report = state.get("report", "")
+    rewrite_count = state.get("rewrite_count", 0)
+    
+    feedback_json = critic_chain.invoke({
+        "report": report
     })
+    
+    score = feedback_json.get("score", 0)
+    feedback_text = feedback_json.get("feedback", "")
+    
+    print(f"Critic Score: {score}/10")
+    print(f"Feedback: {feedback_text}")
+    
+    return {"critic_score": score, "feedback": feedback_text, "rewrite_count": rewrite_count + 1}
 
-    print("\n critic report \n", state['feedback'])
+def route_after_critic(state: GraphState):
+    score = state.get("critic_score", 0)
+    rewrite_count = state.get("rewrite_count", 0)
+    
+    # We require an 7/10 to pass! But we stop if it loops more than 2 times to avoid infinite loops.
+    if score >= 7 or rewrite_count >= 3:
+        print("--> Traffic Light: Score is good enough (>=7)! Finishing the flow.")
+        return "end"
+    else:
+        print("--> Traffic Light: Score too low! Routing back to the Writer to rewrite.")
+        return "rewrite"
 
-    return state
+# --- Build the Graph ---
+workflow = StateGraph(GraphState)
 
+workflow.add_node("Search", node_search)
+workflow.add_node("Scrape", node_scrape)
+workflow.add_node("Write", node_write)
+workflow.add_node("Critic", node_critic)
 
+workflow.set_entry_point("Search")
+workflow.add_edge("Search", "Scrape")
+workflow.add_edge("Scrape", "Write")
+workflow.add_edge("Write", "Critic")
+
+# Conditional Edge
+workflow.add_conditional_edges(
+    "Critic",
+    route_after_critic,
+    {
+        "end": END,
+        "rewrite": "Write"
+    }
+)
+
+app_graph = workflow.compile()
+
+def run_research_pipeline(topic: str):
+    print(f"\nStarting LangGraph pipeline for topic: {topic}")
+    
+    # This runs the whole flowchart automatically!
+    final_state = app_graph.invoke({"topic": topic})
+    
+    return final_state
 
 if __name__ == "__main__":
     topic = input("\n Enter a research topic : ")
