@@ -79,13 +79,14 @@ def route_after_critic(state: GraphState):
     score = state.get("critic_score", 0)
     rewrite_count = state.get("rewrite_count", 0)
     
-    # We require an 7/10 to pass! But we stop if it loops more than 2 times to avoid infinite loops.
-    if score >= 7 or rewrite_count >= 3:
-        print("--> Traffic Light: Score is good enough (>=7)! Finishing the flow.")
+    # Pass on score >= 6 or after 1 rewrite to minimize site load & API calls
+    if score >= 6 or rewrite_count >= 1:
+        print("--> Traffic Light: Score acceptable (>=6) or max rewrite reached. Finishing flow.")
         return "end"
     else:
-        print("--> Traffic Light: Score too low! Routing back to the Writer to rewrite.")
+        print("--> Traffic Light: Score low (<6). Routing back to Writer for 1 quick rewrite.")
         return "rewrite"
+
 
 # --- Build the Graph ---
 workflow = StateGraph(GraphState)

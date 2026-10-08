@@ -532,10 +532,11 @@ if st.session_state.running and not st.session_state.done:
                         score = state.get("critic_score")
                         feedback = state.get("feedback")
                         results["critic"] = f"**Score: {score}/10**\n\n{feedback}"
-                        if score < 7:
+                        if score < 6:
                             st.toast(f"🧐 Critic gave {score}/10. Sending back to Writer for rewrite!")
                         else:
                             st.toast(f"✅ Critic gave {score}/10. Report Approved!")
+
                     
                 st.session_state.results = dict(results)
 
