@@ -324,7 +324,8 @@ for key in ("results", "running", "done", "history", "current_view"):
 # ── Hero ──────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
-    <div class="hero-badge">V2.0 LANGGRAPH RAG EDITION</div>
+    <div class="hero-badge">V2.5 GEMINI 2.0 FLASH EDITION</div>
+
     <h1>DeepDive <span>AI</span></h1>
     <p style="color: #64748B; font-size: 1.1rem; max-width: 650px; margin: 0 auto; line-height: 1.6;">
         Experience the power of autonomous AI agents. They search the web, store facts in a vector database, draft comprehensive reports, and ruthlessly criticize their own work until perfect.
