@@ -6,6 +6,8 @@ streamlit
 
 langchain-google-genai
 google-generativeai
+langchain-groq
+
 
 langchain-tavily
 tavily-python

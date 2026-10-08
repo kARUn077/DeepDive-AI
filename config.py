@@ -9,7 +9,7 @@ def load_app_secrets() -> None:
     except Exception:
         return
 
-    keys = ("GEMINI_API_KEY", "GOOGLE_API_KEY", "TAVILY_API_KEY", "MISTRAL_API_KEY")
+    keys = ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GROQ_API_KEY", "TAVILY_API_KEY", "MISTRAL_API_KEY")
     for key in keys:
         val = os.getenv(key)
         if (not val or val.strip() == "") and hasattr(st, "secrets") and key in st.secrets:
@@ -22,4 +22,5 @@ def load_app_secrets() -> None:
     if gemini_k:
         os.environ["GEMINI_API_KEY"] = gemini_k
         os.environ["GOOGLE_API_KEY"] = gemini_k
+
 

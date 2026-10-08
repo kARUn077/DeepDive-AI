@@ -17,7 +17,13 @@ def get_embeddings():
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
         return GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key=gemini_key)
         
+    mistral_key = os.getenv("MISTRAL_API_KEY")
+    if mistral_key and mistral_key.strip() != "":
+        from langchain_mistralai import MistralAIEmbeddings
+        return MistralAIEmbeddings(model="mistral-embed", mistral_api_key=mistral_key)
+
     raise ValueError("GEMINI_API_KEY is missing in Streamlit Cloud Secrets. Please add GEMINI_API_KEY under Settings -> Secrets.")
+
 
 
 
