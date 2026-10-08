@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, END
 from typing_extensions import TypedDict
-from agents import build_reader_agent, build_search_agent, build_writer_agent, critic_chain
+from agents import build_reader_agent, build_search_agent, build_writer_agent, get_critic_chain
 
 class GraphState(TypedDict):
     topic: str
@@ -11,14 +11,10 @@ class GraphState(TypedDict):
     feedback: str
     rewrite_count: int
 
-# Instantiate the agents once
-search_agent = build_search_agent()
-reader_agent = build_reader_agent()
-writer_agent = build_writer_agent()
-
 def node_search(state: GraphState):
     print("\n--- [NODE] Search Agent ---")
     topic = state["topic"]
+    search_agent = build_search_agent()
     result = search_agent.invoke({
         "messages": [("user", f"Find recent, reliable and detailed information about: {topic}")]
     })
@@ -28,7 +24,7 @@ def node_scrape(state: GraphState):
     print("\n--- [NODE] Reader Agent (RAG) ---")
     search_results = state.get("search_results", "")
     topic = state["topic"]
-    
+    reader_agent = build_reader_agent()
     result = reader_agent.invoke({
         "messages": [("user",
             f"Based on these search results about '{topic}', use your tool to scrape and store the most relevant URLs into the RAG database.\n\n"
@@ -53,6 +49,7 @@ def node_write(state: GraphState):
     if feedback and rewrite_count > 0:
         prompt_msg += f"\n\nWARNING - PREVIOUS DRAFT REJECTED!\nThe Critic gave this feedback. You MUST improve the report based on this:\n{feedback}"
     
+    writer_agent = build_writer_agent()
     result = writer_agent.invoke({
          "messages": [("user", prompt_msg)]
     })
@@ -64,6 +61,7 @@ def node_critic(state: GraphState):
     report = state.get("report", "")
     rewrite_count = state.get("rewrite_count", 0)
     
+    critic_chain = get_critic_chain()
     feedback_json = critic_chain.invoke({
         "report": report
     })
@@ -75,6 +73,7 @@ def node_critic(state: GraphState):
     print(f"Feedback: {feedback_text}")
     
     return {"critic_score": score, "feedback": feedback_text, "rewrite_count": rewrite_count + 1}
+
 
 def route_after_critic(state: GraphState):
     score = state.get("critic_score", 0)

@@ -1,7 +1,5 @@
 import os
-
 from dotenv import load_dotenv
-
 
 def load_app_secrets() -> None:
     load_dotenv()
@@ -12,5 +10,8 @@ def load_app_secrets() -> None:
         return
 
     for key in ("MISTRAL_API_KEY", "TAVILY_API_KEY"):
-        if not os.getenv(key) and key in st.secrets:
-            os.environ[key] = str(st.secrets[key])
+        val = os.getenv(key)
+        if (not val or val.strip() == "") and hasattr(st, "secrets") and key in st.secrets:
+            os.environ[key] = str(st.secrets[key]).strip()
+        elif val:
+            os.environ[key] = val.strip()

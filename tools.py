@@ -1,40 +1,55 @@
 from langchain_core.tools import tool
-import requests  #to make HTTP requests
-from bs4 import BeautifulSoup #it is a library for parsing HTML and XML documents
-
-from tavily import TavilyClient
+import requests  # to make HTTP requests
+from bs4 import BeautifulSoup  # library for parsing HTML and XML documents
 import os
 from rich import print
 from config import load_app_secrets
 
 load_app_secrets()
 
-tavily = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
+# A global variable to store our RAG database in memory
+global_vector_store = None
 
-#create tool
+def get_embeddings():
+    load_app_secrets()
+    key = os.getenv("MISTRAL_API_KEY")
+    if not key:
+        raise ValueError("MISTRAL_API_KEY is missing. Please provide a valid key in environment or Streamlit Secrets.")
+    from langchain_mistralai import MistralAIEmbeddings
+    return MistralAIEmbeddings(model="mistral-embed", mistral_api_key=key)
+
+# Create tool
 @tool
 def web_search(query: str) -> str:
     """
-    Search web for recent and reliable information on topic , return titles and urls and snippets.
+    Search web for recent and reliable information on topic, return titles and urls and snippets.
     """
+    load_app_secrets()
+    tavily_key = os.getenv("TAVILY_API_KEY")
+    if not tavily_key:
+        return "Error: TAVILY_API_KEY is missing. Please set TAVILY_API_KEY in environment or Streamlit secrets."
+    
+    try:
+        from tavily import TavilyClient
+        tavily = TavilyClient(api_key=tavily_key)
+        results = tavily.search(query=query, max_results=5)
 
-    results = tavily.search(query=query, max_results=5)  # Search the web for the query and return top 5 results
+        out = []
+        for r in results.get('results', []):
+            title = r.get('title', 'No title')
+            url = r.get('url', '')
+            content = r.get('content', '')[:300]
+            out.append(f"Title: {title}\nURL: {url}\nSnippet: {content}\n")
 
-    out = []
-    for r in results['results']:
-        out.append(f"Title: {r['title']}\nURL: {r['url']}\nSnippet: {r['content'][:300]}\n")
+        if not out:
+            return "No web search results found."
 
-    return "\n------\n".join(out)
+        return "\n------\n".join(out)
+    except Exception as e:
+        return f"Error executing web search: {str(e)}"
 
 from langchain_community.vectorstores import FAISS
-from langchain_mistralai import MistralAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-# Initialize Mistral Embeddings
-embeddings = MistralAIEmbeddings(model="mistral-embed")
-
-# A global variable to store our RAG database in memory
-global_vector_store = None
 
 @tool
 def scrape_and_store_url(url: str) -> str:
@@ -46,10 +61,11 @@ def scrape_and_store_url(url: str) -> str:
         for tag in soup(["script", "style", "nav", "footer"]):
             tag.decompose()
         
-        # Get the full text instead of just 3000 chars
         full_text = soup.get_text(separator=" ", strip=True)
+        if not full_text or len(full_text) < 50:
+            return f"Could not extract meaningful text from URL: {url}"
         
-        # 1. Chunking: split the big text into smaller ~1000 character pieces
+        # 1. Chunking
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000, 
             chunk_overlap=100
@@ -57,11 +73,10 @@ def scrape_and_store_url(url: str) -> str:
         chunks = text_splitter.split_text(full_text)
         
         # 2. Embedding & Vector Store (FAISS)
+        embeddings = get_embeddings()
         if global_vector_store is None:
-            # Create the database for the first time
             global_vector_store = FAISS.from_texts(chunks, embeddings)
         else:
-            # Add to the existing database
             global_vector_store.add_texts(chunks)
             
         return f"Successfully scraped and saved {len(chunks)} text chunks from {url} into our RAG database."
@@ -75,9 +90,9 @@ def retrieve_knowledge(query: str) -> str:
     if global_vector_store is None:
         return "No knowledge base available. Please scrape a URL first."
     
-    # Search the database for the top 3 most relevant chunks to the query
-    docs = global_vector_store.similarity_search(query, k=3)
-    results = [doc.page_content for doc in docs]
-    
-    # Return them separated by lines
-    return "\n\n---\n\n".join(results)
+    try:
+        docs = global_vector_store.similarity_search(query, k=3)
+        results = [doc.page_content for doc in docs]
+        return "\n\n---\n\n".join(results)
+    except Exception as e:
+        return f"Error retrieving knowledge: {str(e)}"

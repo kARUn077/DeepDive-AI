@@ -1,5 +1,11 @@
 import streamlit as st
 import time
+import os
+from config import load_app_secrets
+
+# ── Load Secrets Early ────────────────────────────────────────────────────────
+load_app_secrets()
+
 from pipeline import app_graph
 
 # ── Page config ──────────────────────────────────────────────────────────────
@@ -9,6 +15,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
 
 # ── Custom CSS ────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -502,42 +509,75 @@ if st.session_state.running and not st.session_state.done:
     
     start_time = time.time()
 
-    with st.spinner("🧠 LangGraph Agentic Pipeline is executing..."):
-        # We use app_graph.stream to watch the agents work step-by-step
-        for event in app_graph.stream({"topic": topic_val}):
-            for node, state in event.items():
-                if node == "Search":
-                    results["search"] = state.get("search_results")
-                    st.toast("🌐 Search Agent finished gathering info!")
-                elif node == "Scrape":
-                    results["reader"] = state.get("scraped_content")
-                    st.toast("🗄️ Reader Agent stored data in RAG Database!")
-                elif node == "Write":
-                    results["writer"] = state.get("report")
-                    st.toast("✍️ Writer Agent drafted a report!")
-                elif node == "Critic":
-                    score = state.get("critic_score")
-                    feedback = state.get("feedback")
-                    results["critic"] = f"**Score: {score}/10**\n\n{feedback}"
-                    if score < 7:
-                        st.toast(f"🧐 Critic gave {score}/10. Sending back to Writer for rewrite!")
-                    else:
-                        st.toast(f"✅ Critic gave {score}/10. Report Approved!")
-                
-            st.session_state.results = dict(results)
+    try:
+        with st.spinner("🧠 LangGraph Agentic Pipeline is executing..."):
+            # We use app_graph.stream to watch the agents work step-by-step
+            for event in app_graph.stream({"topic": topic_val}):
+                for node, state in event.items():
+                    if node == "Search":
+                        results["search"] = state.get("search_results")
+                        st.toast("🌐 Search Agent finished gathering info!")
+                    elif node == "Scrape":
+                        results["reader"] = state.get("scraped_content")
+                        st.toast("🗄️ Reader Agent stored data in RAG Database!")
+                    elif node == "Write":
+                        results["writer"] = state.get("report")
+                        st.toast("✍️ Writer Agent drafted a report!")
+                    elif node == "Critic":
+                        score = state.get("critic_score")
+                        feedback = state.get("feedback")
+                        results["critic"] = f"**Score: {score}/10**\n\n{feedback}"
+                        if score < 7:
+                            st.toast(f"🧐 Critic gave {score}/10. Sending back to Writer for rewrite!")
+                        else:
+                            st.toast(f"✅ Critic gave {score}/10. Report Approved!")
+                    
+                st.session_state.results = dict(results)
 
-    st.session_state.last_run_time = time.time() - start_time
-    st.session_state.running = False
-    st.session_state.done = True
-    st.session_state.current_view = topic_val
-    
-    # Save this run to the sidebar history
-    st.session_state.history.append({
-        "topic": topic_val,
-        "results": dict(results)
-    })
-    
-    st.rerun()
+        st.session_state.last_run_time = time.time() - start_time
+        st.session_state.running = False
+        st.session_state.done = True
+        st.session_state.current_view = topic_val
+        
+        # Save this run to the sidebar history
+        st.session_state.history.append({
+            "topic": topic_val,
+            "results": dict(results)
+        })
+        st.rerun()
+
+    except Exception as err:
+        st.session_state.running = False
+        st.session_state.done = False
+        err_type = type(err).__name__
+        err_str = str(err)
+        
+        st.error("❌ **Pipeline Execution Failed!**")
+        
+        if "HTTPStatusError" in err_type or "401" in err_str or "Unauthorized" in err_str:
+            st.error("🔑 **401 Unauthorized Error (Mistral API Key)**: Your `MISTRAL_API_KEY` is invalid, expired, or missing. Please generate a valid key at [console.mistral.ai](https://console.mistral.ai/).")
+        elif "429" in err_str or "Rate limit" in err_str or "Quota" in err_str:
+            st.error("⏳ **429 Rate Limit / Quota Exceeded**: Mistral AI API rate limits were hit or free credits exhausted.")
+        elif "404" in err_str:
+            st.error("🔍 **404 Model Not Found**: The requested Mistral model is not accessible with your API key tier.")
+        elif "TAVILY_API_KEY" in err_str or "tavily" in err_str.lower():
+            st.error("🔑 **Tavily API Key Error**: `TAVILY_API_KEY` is invalid or missing. Check [tavily.com](https://tavily.com).")
+        else:
+            st.error(f"⚠️ **Error Details ({err_type})**: `{err_str}`")
+
+        with st.expander("🛠️ How to fix on Streamlit Cloud"):
+            st.markdown("""
+            If deploying on **Streamlit Community Cloud**:
+            1. Go to your app dashboard on Streamlit Cloud.
+            2. Click **Manage app** (bottom right) ⚙️ -> **Settings** -> **Secrets**.
+            3. Enter your secrets in TOML format:
+               ```toml
+               MISTRAL_API_KEY = "your_actual_mistral_api_key"
+               TAVILY_API_KEY = "tvly-your_actual_tavily_api_key"
+               ```
+            4. Click **Save** and re-run your mission!
+            """)
+
 
 
 # ── Results display ───────────────────────────────────────────────────────────

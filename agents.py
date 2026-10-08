@@ -1,3 +1,4 @@
+import os
 from langgraph.prebuilt import create_react_agent
 from langchain_mistralai import ChatMistralAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -8,35 +9,39 @@ from config import load_app_secrets
 
 load_app_secrets()
 
-# Model setup 
-llm = ChatMistralAI(
-    model="mistral-small-latest",
-    temperature=0
-)
+def get_llm():
+    load_app_secrets()
+    key = os.getenv("MISTRAL_API_KEY")
+    if not key or key.strip() == "":
+        raise ValueError("MISTRAL_API_KEY is missing or empty. Please set MISTRAL_API_KEY in your .env or Streamlit Secrets.")
+    return ChatMistralAI(
+        model="mistral-small-latest",
+        temperature=0,
+        mistral_api_key=key
+    )
 
 # 1st agent: Search Agent
 def build_search_agent():
-    # We use LangGraph's built-in agent creator
     return create_react_agent(
-        model=llm,
+        model=get_llm(),
         tools=[web_search]
     )
 
 # 2nd agent: Reader/Scraper Agent
 def build_reader_agent():
     return create_react_agent(
-        model=llm,
+        model=get_llm(),
         tools=[scrape_and_store_url]
     )
 
-# 3rd agent: Writer Agent (now uses RAG!)
+# 3rd agent: Writer Agent (uses RAG!)
 def build_writer_agent():
     return create_react_agent(
-        model=llm,
+        model=get_llm(),
         tools=[retrieve_knowledge]
     )
 
-# 4th agent: Critic Chain (now structured JSON)
+# 4th agent: Critic Chain (structured JSON)
 class CriticScore(BaseModel):
     score: int = Field(description="A score out of 10 for the report.")
     feedback: str = Field(description="Constructive feedback, strengths, and areas to improve.")
@@ -48,5 +53,5 @@ critic_prompt = ChatPromptTemplate.from_messages([
     ("human", "Review the research report below:\n\nReport:\n{report}")
 ]).partial(format_instructions=json_parser.get_format_instructions())
 
-# The critic_chain now automatically parses the output into a Python Dictionary
-critic_chain = critic_prompt | llm | json_parser
+def get_critic_chain():
+    return critic_prompt | get_llm() | json_parser
