@@ -13,16 +13,12 @@ global_vector_store = None
 def get_embeddings():
     load_app_secrets()
     gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    if gemini_key:
+    if gemini_key and gemini_key.strip() != "":
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
         return GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key=gemini_key)
-    
-    mistral_key = os.getenv("MISTRAL_API_KEY")
-    if mistral_key:
-        from langchain_mistralai import MistralAIEmbeddings
-        return MistralAIEmbeddings(model="mistral-embed", mistral_api_key=mistral_key)
         
-    raise ValueError("GEMINI_API_KEY is missing. Please set GEMINI_API_KEY in your .env or Streamlit Secrets.")
+    raise ValueError("GEMINI_API_KEY is missing in Streamlit Cloud Secrets. Please add GEMINI_API_KEY under Settings -> Secrets.")
+
 
 
 # Create tool
