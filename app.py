@@ -451,7 +451,9 @@ if not st.session_state.results and not st.session_state.running:
     latency_val = f"{last_run:.1f} s" if last_run > 0 else "--"
     
     # 4. System Status (Checking API Keys)
-    keys_ok = os.getenv("MISTRAL_API_KEY") and os.getenv("TAVILY_API_KEY")
+    llm_key_ok = bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or os.getenv("MISTRAL_API_KEY"))
+    tavily_key_ok = bool(os.getenv("TAVILY_API_KEY"))
+    keys_ok = llm_key_ok and tavily_key_ok
     sys_status = "OPTIMAL" if keys_ok else "NO KEYS"
     sys_color = "#A78BFA" if keys_ok else "#F87171"
     sys_glow = "rgba(139, 92, 246, 0.3)" if keys_ok else "rgba(248, 113, 113, 0.3)"
@@ -554,29 +556,29 @@ if st.session_state.running and not st.session_state.done:
         
         st.error("❌ **Pipeline Execution Failed!**")
         
-        if "HTTPStatusError" in err_type or "401" in err_str or "Unauthorized" in err_str:
-            st.error("🔑 **401 Unauthorized Error (Mistral API Key)**: Your `MISTRAL_API_KEY` is invalid, expired, or missing. Please generate a valid key at [console.mistral.ai](https://console.mistral.ai/).")
+        if "GEMINI_API_KEY" in err_str or "GOOGLE_API_KEY" in err_str:
+            st.error("🔑 **Gemini API Key Error**: `GEMINI_API_KEY` is missing or invalid. Get a free key at [aistudio.google.com](https://aistudio.google.com).")
+        elif "HTTPStatusError" in err_type or "401" in err_str or "Unauthorized" in err_str:
+            st.error("🔑 **401 Unauthorized Error**: Your LLM API key is invalid or expired. Check your Streamlit Secrets.")
         elif "429" in err_str or "Rate limit" in err_str or "Quota" in err_str:
-            st.error("⏳ **429 Rate Limit / Quota Exceeded**: Mistral AI API rate limits were hit or free credits exhausted.")
-        elif "404" in err_str:
-            st.error("🔍 **404 Model Not Found**: The requested Mistral model is not accessible with your API key tier.")
+            st.error("⏳ **429 Rate Limit Exceeded**: API rate limit reached.")
         elif "TAVILY_API_KEY" in err_str or "tavily" in err_str.lower():
-            st.error("🔑 **Tavily API Key Error**: `TAVILY_API_KEY` is invalid or missing. Check [tavily.com](https://tavily.com).")
+            st.error("🔑 **Tavily API Key Error**: `TAVILY_API_KEY` is missing or invalid.")
         else:
             st.error(f"⚠️ **Error Details ({err_type})**: `{err_str}`")
 
-        with st.expander("🛠️ How to fix on Streamlit Cloud"):
+        with st.expander("🛠️ How to set up Gemini API Key on Streamlit Cloud"):
             st.markdown("""
-            If deploying on **Streamlit Community Cloud**:
-            1. Go to your app dashboard on Streamlit Cloud.
-            2. Click **Manage app** (bottom right) ⚙️ -> **Settings** -> **Secrets**.
-            3. Enter your secrets in TOML format:
+            1. Get a **100% Free Gemini API Key** from [Google AI Studio](https://aistudio.google.com/app/apikey).
+            2. Open your Streamlit Cloud app settings ⚙️ -> **Secrets**.
+            3. Paste your secrets in TOML format:
                ```toml
-               MISTRAL_API_KEY = "your_actual_mistral_api_key"
-               TAVILY_API_KEY = "tvly-your_actual_tavily_api_key"
+               GEMINI_API_KEY = "your_free_gemini_api_key"
+               TAVILY_API_KEY = "tvly-your_tavily_api_key"
                ```
-            4. Click **Save** and re-run your mission!
+            4. Click **Save** and re-run!
             """)
+
 
 
 

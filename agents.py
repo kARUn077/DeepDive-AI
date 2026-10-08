@@ -11,14 +11,26 @@ load_app_secrets()
 
 def get_llm():
     load_app_secrets()
-    key = os.getenv("MISTRAL_API_KEY")
-    if not key or key.strip() == "":
-        raise ValueError("MISTRAL_API_KEY is missing or empty. Please set MISTRAL_API_KEY in your .env or Streamlit Secrets.")
-    return ChatMistralAI(
-        model="mistral-small-latest",
-        temperature=0,
-        mistral_api_key=key
-    )
+    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if gemini_key and gemini_key.strip() != "":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        return ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash",
+            temperature=0,
+            google_api_key=gemini_key
+        )
+    
+    mistral_key = os.getenv("MISTRAL_API_KEY")
+    if mistral_key and mistral_key.strip() != "":
+        from langchain_mistralai import ChatMistralAI
+        return ChatMistralAI(
+            model="mistral-small-latest",
+            temperature=0,
+            mistral_api_key=mistral_key
+        )
+    
+    raise ValueError("GEMINI_API_KEY is missing. Please set GEMINI_API_KEY in your .env or Streamlit Secrets.")
+
 
 # 1st agent: Search Agent
 def build_search_agent():

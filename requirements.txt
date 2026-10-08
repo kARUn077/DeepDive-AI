@@ -4,8 +4,8 @@ langchain-community
 langgraph
 streamlit
 
-langchain-mistralai
-mistralai
+langchain-google-genai
+google-generativeai
 
 langchain-tavily
 tavily-python
@@ -20,4 +20,4 @@ pydantic
 
 typing-extensions
 
-faiss-cpu
+faiss-cpu
