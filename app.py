@@ -324,7 +324,8 @@ for key in ("results", "running", "done", "history", "current_view"):
 # ── Hero ──────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
-    <div class="hero-badge">V2.5 GEMINI 2.0 FLASH EDITION</div>
+    <div class="hero-badge">V3.0 GROQ LLAMA-3.3 70B EDITION</div>
+
 
     <h1>DeepDive <span>AI</span></h1>
     <p style="color: #64748B; font-size: 1.1rem; max-width: 650px; margin: 0 auto; line-height: 1.6;">
@@ -557,7 +558,9 @@ if st.session_state.running and not st.session_state.done:
         
         st.error("❌ **Pipeline Execution Failed!**")
         
-        if "GEMINI_API_KEY" in err_str or "GOOGLE_API_KEY" in err_str:
+        if "GROQ_API_KEY" in err_str:
+            st.error("🔑 **Groq API Key Error**: `GROQ_API_KEY` is missing or invalid. Get a free key at [console.groq.com](https://console.groq.com).")
+        elif "GEMINI_API_KEY" in err_str or "GOOGLE_API_KEY" in err_str:
             st.error("🔑 **Gemini API Key Error**: `GEMINI_API_KEY` is missing or invalid. Get a free key at [aistudio.google.com](https://aistudio.google.com).")
         elif "HTTPStatusError" in err_type or "401" in err_str or "Unauthorized" in err_str:
             st.error("🔑 **401 Unauthorized Error**: Your LLM API key is invalid or expired. Check your Streamlit Secrets.")
@@ -568,17 +571,18 @@ if st.session_state.running and not st.session_state.done:
         else:
             st.error(f"⚠️ **Error Details ({err_type})**: `{err_str}`")
 
-        with st.expander("🛠️ How to set up Gemini API Key on Streamlit Cloud"):
+        with st.expander("🛠️ How to set up Groq API Key on Streamlit Cloud"):
             st.markdown("""
-            1. Get a **100% Free Gemini API Key** from [Google AI Studio](https://aistudio.google.com/app/apikey).
+            1. Get a **100% Free Groq API Key** from [console.groq.com/keys](https://console.groq.com/keys).
             2. Open your Streamlit Cloud app settings ⚙️ -> **Secrets**.
             3. Paste your secrets in TOML format:
                ```toml
-               GEMINI_API_KEY = "your_free_gemini_api_key"
-               TAVILY_API_KEY = "tvly-your_tavily_api_key"
+               GROQ_API_KEY = "gsk_your_groq_api_key_here"
+               TAVILY_API_KEY = "tvly-your_tavily_api_key_here"
                ```
             4. Click **Save** and re-run!
             """)
+
 
 
 

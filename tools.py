@@ -22,7 +22,13 @@ def get_embeddings():
         from langchain_mistralai import MistralAIEmbeddings
         return MistralAIEmbeddings(model="mistral-embed", mistral_api_key=mistral_key)
 
-    raise ValueError("GEMINI_API_KEY is missing in Streamlit Cloud Secrets. Please add GEMINI_API_KEY under Settings -> Secrets.")
+    # Free CPU embeddings for Groq / general use (no API key needed!)
+    try:
+        from langchain_community.embeddings import HuggingFaceEmbeddings
+        return HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    except Exception:
+        raise ValueError("GROQ_API_KEY or GEMINI_API_KEY is missing in Streamlit Cloud Secrets. Please check your Settings -> Secrets.")
+
 
 
 

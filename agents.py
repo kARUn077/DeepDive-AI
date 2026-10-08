@@ -12,35 +12,31 @@ load_app_secrets()
 def get_llm():
     load_app_secrets()
 
-    # 1. Try Gemini API
-    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-
-    if gemini_key and gemini_key.strip() != "":
-        from langchain_google_genai import ChatGoogleGenerativeAI
-
-        return ChatGoogleGenerativeAI(
-            model="gemini-3.8-flash",
-            google_api_key=gemini_key
-        )
-
-    # 2. Try Groq API
+    # 1. Try Groq API (Primary Choice - Llama 3.3 70B, Blazing Fast)
     groq_key = os.getenv("GROQ_API_KEY")
-
     if groq_key and groq_key.strip() != "":
         from langchain_groq import ChatGroq
-
         return ChatGroq(
             model="llama-3.3-70b-versatile",
             temperature=0,
             groq_api_key=groq_key
         )
 
+    # 2. Try Gemini API
+    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if gemini_key and gemini_key.strip() != "":
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        return ChatGoogleGenerativeAI(
+            model="gemini-2.0-flash",
+            temperature=0,
+            google_api_key=gemini_key,
+            max_retries=3
+        )
+
     # 3. Try Mistral API
     mistral_key = os.getenv("MISTRAL_API_KEY")
-
     if mistral_key and mistral_key.strip() != "":
         from langchain_mistralai import ChatMistralAI
-
         return ChatMistralAI(
             model="mistral-small-latest",
             temperature=0,
@@ -48,9 +44,10 @@ def get_llm():
         )
 
     raise ValueError(
-        "GEMINI_API_KEY is missing in Streamlit Cloud Secrets. "
-        "Please add GEMINI_API_KEY or GROQ_API_KEY under Settings -> Secrets."
+        "GROQ_API_KEY or GEMINI_API_KEY is missing in Streamlit Cloud Secrets. "
+        "Please add GROQ_API_KEY under Settings -> Secrets."
     )
+
 
 
 # 1st Agent: Search Agent
