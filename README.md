@@ -2,7 +2,7 @@
 
 DeepDive AI is a multi-agent research assistant built with Streamlit, LangChain, Mistral AI, and Tavily. It searches the web, scrapes relevant sources, writes a report, and critiques the result.
 
-Live app: https://deepdive-ai-01.streamlit.app/
+
 
 ## Features
 
