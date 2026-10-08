@@ -15,12 +15,13 @@ def get_llm():
     if gemini_key and gemini_key.strip() != "":
         from langchain_google_genai import ChatGoogleGenerativeAI
         return ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash",
+            model="gemini-1.5-flash-latest",
             temperature=0,
             google_api_key=gemini_key
         )
     
     raise ValueError("GEMINI_API_KEY is missing in Streamlit Cloud Secrets. Please add GEMINI_API_KEY under Settings -> Secrets.")
+
 
 
 
