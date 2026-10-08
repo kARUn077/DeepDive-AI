@@ -15,13 +15,13 @@ def get_llm():
     # 1. Try Groq API (Primary Choice - Llama 3.3 70B, Blazing Fast)
     groq_key = os.getenv("GROQ_API_KEY")
     if groq_key and groq_key.strip() != "":
+        # pyrefly: ignore [missing-import]
         from langchain_groq import ChatGroq
         return ChatGroq(
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-120b",
             temperature=0,
             groq_api_key=groq_key
         )
-
 
 
     # 2. Try Gemini API
@@ -29,12 +29,11 @@ def get_llm():
     if gemini_key and gemini_key.strip() != "":
         from langchain_google_genai import ChatGoogleGenerativeAI
         return ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             temperature=0,
             google_api_key=gemini_key,
             max_retries=3
         )
-
 
     # 3. Try Mistral API
     mistral_key = os.getenv("MISTRAL_API_KEY")
