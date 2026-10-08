@@ -29,11 +29,12 @@ def get_llm():
     if gemini_key and gemini_key.strip() != "":
         from langchain_google_genai import ChatGoogleGenerativeAI
         return ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            model="gemini-1.5-flash",
             temperature=0,
             google_api_key=gemini_key,
             max_retries=3
         )
+
 
     # 3. Try Mistral API
     mistral_key = os.getenv("MISTRAL_API_KEY")
