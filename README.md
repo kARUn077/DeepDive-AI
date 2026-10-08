@@ -36,7 +36,6 @@ streamlit run app.py
 
 ## Deploy on Streamlit Cloud
 
-Hosted app: https://deepdive-ai-01.streamlit.app/
 
 1. Push this project to GitHub.
 2. Go to Streamlit Cloud and create a new app.
