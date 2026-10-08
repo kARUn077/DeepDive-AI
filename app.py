@@ -324,7 +324,8 @@ for key in ("results", "running", "done", "history", "current_view"):
 # ── Hero ──────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div class="hero">
-    <div class="hero-badge">V3.0 GROQ LLAMA-3.3 70B EDITION</div>
+    <div class="hero-badge">V3.1 GROQ LLAMA 3.1 INSTANT EDITION</div>
+
 
 
     <h1>DeepDive <span>AI</span></h1>

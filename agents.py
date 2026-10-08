@@ -17,10 +17,11 @@ def get_llm():
     if groq_key and groq_key.strip() != "":
         from langchain_groq import ChatGroq
         return ChatGroq(
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             temperature=0,
             groq_api_key=groq_key
         )
+
 
     # 2. Try Gemini API
     gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
