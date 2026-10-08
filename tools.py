@@ -33,12 +33,21 @@ def get_embeddings():
 
 
 
-# Create tool
-@tool
+from pydantic import BaseModel, Field
+
+class WebSearchInput(BaseModel):
+    query: str = Field(description="The search query keywords to look up on the web.")
+
+class ScrapeUrlInput(BaseModel):
+    url: str = Field(description="The exact HTTP or HTTPS URL of the webpage to scrape.")
+
+class RetrieveKnowledgeInput(BaseModel):
+    query: str = Field(description="The search query string to look up in the vector database.")
+
+# Create tools with explicit schemas
+@tool(args_schema=WebSearchInput)
 def web_search(query: str) -> str:
-    """
-    Search web for recent and reliable information on topic, return titles and urls and snippets.
-    """
+    """Search web for recent and reliable information on topic, return titles, urls, and snippets."""
     load_app_secrets()
     tavily_key = os.getenv("TAVILY_API_KEY")
     if not tavily_key:
@@ -66,7 +75,7 @@ def web_search(query: str) -> str:
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-@tool
+@tool(args_schema=ScrapeUrlInput)
 def scrape_and_store_url(url: str) -> str:
     """Scrape a URL, chunk its content, and store it in the RAG Vector Database."""
     global global_vector_store
@@ -98,7 +107,7 @@ def scrape_and_store_url(url: str) -> str:
     except Exception as e:
         return f"Could not scrape URL: {str(e)}"
 
-@tool
+@tool(args_schema=RetrieveKnowledgeInput)
 def retrieve_knowledge(query: str) -> str:
     """Search the vector database for information relevant to the query."""
     global global_vector_store
@@ -110,4 +119,5 @@ def retrieve_knowledge(query: str) -> str:
         results = [doc.page_content for doc in docs]
         return "\n\n---\n\n".join(results)
     except Exception as e:
-        return f"Error retrieving knowledge: {str(e)}"
+        return f"Error retrieving knowledge: {str(e)}"
+

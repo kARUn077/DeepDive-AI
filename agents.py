@@ -17,10 +17,11 @@ def get_llm():
     if groq_key and groq_key.strip() != "":
         from langchain_groq import ChatGroq
         return ChatGroq(
-            model="openai/gpt-oss-120b",
+            model="llama-3.1-8b-instant",
             temperature=0,
             groq_api_key=groq_key
         )
+
 
 
     # 2. Try Gemini API
